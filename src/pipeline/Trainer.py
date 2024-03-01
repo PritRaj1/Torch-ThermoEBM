@@ -111,8 +111,8 @@ class LatentEBM_Model(L.LightningModule):
 
     def get_loss(self, x):
 
-        ebm_loss = TI_EBM_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
-        gen_loss = TI_GEN_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
+        ebm_loss = TI_EBM_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule).mean()
+        gen_loss = TI_GEN_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule).mean()
 
         # Update params
         self.optimiser_step(ebm_loss, gen_loss)
@@ -129,11 +129,11 @@ class LatentEBM_Model(L.LightningModule):
         EBM_opt, GEN_opt = self.optimizers()
 
         GEN_opt.zero_grad()
-        self.manual_backward(lossG.mean())
+        self.manual_backward(lossG)
         GEN_opt.step()
 
         EBM_opt.zero_grad()
-        self.manual_backward(lossE.mean())
+        self.manual_backward(lossE)
         EBM_opt.step()
 
     def generate(self, x=None):

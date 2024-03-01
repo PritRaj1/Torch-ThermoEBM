@@ -40,6 +40,4 @@ class GEN(nn.Module):
     
 
     def forward(self, z):
-        for layer in self.layers:
-            z = layer(z)
-        return z
+        return self.layers(z)

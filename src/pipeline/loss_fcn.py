@@ -21,7 +21,7 @@ def ebm_loss(z_prior, z_posterior, EBM):
     en_neg = EBM(z_prior.detach())
 
     # Return the difference in energies
-    return en_pos - en_neg
+    return (en_pos - en_neg).squeeze().sum(axis=-1)
 
 
 def gen_loss(x, z, GEN):
@@ -31,9 +31,9 @@ def gen_loss(x, z, GEN):
 
     # Compute -log[ p_β(x | z) ]; max likelihood training
     x_pred = GEN(z) + (pl_sig * torch.randn_like(x))
-    log_lkhood = (torch.norm(x - x_pred, dim=-1) ** 2) / (2.0 * pl_sig**2)
+    log_lkhood = (torch.norm(x - x_pred, dim=(2,3)) ** 2) / (2.0 * pl_sig**2)
 
-    return log_lkhood
+    return log_lkhood.sum(axis=-1)
 
 
 def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
