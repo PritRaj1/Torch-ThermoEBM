@@ -27,7 +27,7 @@ def update_step(x, grad_f, s):
 def sample_p0():
     """Sample from the prior distribution."""
 
-    return p0_sig * torch.randn(*[batch_size, 1, 1, z_channels], requires_grad=True)
+    return p0_sig * torch.randn(*[batch_size, z_channels, 1, 1], requires_grad=True)
 
 def sample_prior(EBM):
     """
