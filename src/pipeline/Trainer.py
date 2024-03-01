@@ -74,7 +74,7 @@ class LatentEBM_Model(L.LightningModule):
         loss = loss_GEN + loss_EBM
 
         self.log("train_loss", loss)
-        #stores_grads(self)
+        stores_grads(self)
 
         return loss
 
@@ -91,7 +91,7 @@ class LatentEBM_Model(L.LightningModule):
             loss = loss_GEN + loss_EBM
 
             self.log("val_loss", loss)
-            #stores_grads(self)
+            stores_grads(self)
 
             # Generate data
             generated_data = self.generate()
