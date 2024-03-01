@@ -14,9 +14,16 @@ parser.read("hyperparams.ini")
 batch_size = int(parser["PIPELINE"]["BATCH_SIZE"])
 
 fid = FrechetInceptionDistance(feature=64, normalize=True)  # FID metric
-mifid = MemorizationInformedFrechetInceptionDistance(feature=64, normalize=True)  # MI-FID metric
-kid = KernelInceptionDistance(feature=64, subset_size=batch_size, normalize=True)  # KID metric
-lpips = LearnedPerceptualImagePatchSimilarity(net_type="alex", normalize=True)  # LPIPS metric
+mifid = MemorizationInformedFrechetInceptionDistance(
+    feature=64, normalize=True
+)  # MI-FID metric
+kid = KernelInceptionDistance(
+    feature=64, subset_size=batch_size, normalize=True
+)  # KID metric
+lpips = LearnedPerceptualImagePatchSimilarity(
+    net_type="alex", normalize=True
+)  # LPIPS metric
+
 
 def profile_image(x, x_pred):
 
@@ -44,44 +51,44 @@ def profile_image(x, x_pred):
 
     return fid_score, mifid_score, kid_score, lpips_score
 
+
 def loss_FLOPS(LitTrainer, x):
-        """
-        Method to compute the FLOPS required to calculate the loss.
-        """
+    """
+    Method to compute the FLOPS required to calculate the loss.
+    """
 
-        # Profile FLOPS for loss calculation
-        flops_profiler = FlopsProfiler(LitTrainer)
+    # Profile FLOPS for loss calculation
+    flops_profiler = FlopsProfiler(LitTrainer)
 
-        flops_profiler.start_profile()
+    flops_profiler.start_profile()
 
-        loss_EBM, loss_GEN = LitTrainer.get_loss(x)
+    loss_EBM, loss_GEN = LitTrainer.get_loss(x)
 
-        flops = flops_profiler.get_total_flops()
-        flops_profiler.end_profile()
+    flops = flops_profiler.get_total_flops()
+    flops_profiler.end_profile()
 
-        LitTrainer.log("loss_flops", flops)
+    LitTrainer.log("loss_flops", flops)
+
 
 def stores_grads(LitTrainer):
-        """
-        Method to store the gradients of the EBM and GEN losses.
-        """
+    """
+    Method to store the gradients of the EBM and GEN losses.
+    """
 
-        for name, param in LitTrainer.EBM.named_parameters():
-            if param.requires_grad:
-                try:
-                    EBM_grad = param.grad
-                except:
-                    EBM_grad = None
-                
-                
-        for name, param in LitTrainer.GEN.named_parameters():
-            if param.requires_grad:
-                try:
-                    GEN_grad = param.grad
-                except:
-                    GEN_grad = None
-                
-        # Variance of all grads
-        all_grad = torch.cat([EBM_grad.flatten(), GEN_grad.flatten()])
-        LitTrainer.log("grad_var", torch.var(all_grad))
-        
+    for name, param in LitTrainer.EBM.named_parameters():
+        if param.requires_grad:
+            try:
+                EBM_grad = param.grad
+            except:
+                EBM_grad = None
+
+    for name, param in LitTrainer.GEN.named_parameters():
+        if param.requires_grad:
+            try:
+                GEN_grad = param.grad
+            except:
+                GEN_grad = None
+
+    # Variance of all grads
+    all_grad = torch.cat([EBM_grad.flatten(), GEN_grad.flatten()])
+    LitTrainer.log("grad_var", torch.var(all_grad))

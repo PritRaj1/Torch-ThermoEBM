@@ -6,14 +6,15 @@ from src.MCMC_Sampling.grad_log_probs import prior_grad_log, posterior_grad_log
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
 
-p0_sig = float(parser['SIGMAS']['p0_SIGMA'])
-batch_size = int(parser['PIPELINE']['BATCH_SIZE'])
-z_channels = int(parser['EBM']['Z_CHANNELS'])
+p0_sig = float(parser["SIGMAS"]["p0_SIGMA"])
+batch_size = int(parser["PIPELINE"]["BATCH_SIZE"])
+z_channels = int(parser["EBM"]["Z_CHANNELS"])
 
-prior_steps = int(parser['MCMC']['E_SAMPLE_STEPS'])
-prior_s = float(parser['MCMC']['E_STEP_SIZE'])
-posterior_steps = int(parser['MCMC']['G_SAMPLE_STEPS'])
-posterior_s = float(parser['MCMC']['G_STEP_SIZE'])
+prior_steps = int(parser["MCMC"]["E_SAMPLE_STEPS"])
+prior_s = float(parser["MCMC"]["E_STEP_SIZE"])
+posterior_steps = int(parser["MCMC"]["G_SAMPLE_STEPS"])
+posterior_s = float(parser["MCMC"]["G_STEP_SIZE"])
+
 
 def update_step(x, grad_f, s):
     """Update the current state of the sampler."""
@@ -28,6 +29,7 @@ def sample_p0():
     """Sample from the prior distribution."""
 
     return p0_sig * torch.randn(*[batch_size, z_channels, 1, 1], requires_grad=True)
+
 
 def sample_prior(EBM):
     """
@@ -50,21 +52,16 @@ def sample_prior(EBM):
 
     return key, z
 
-def sample_posterior(
-    key,
-    x, 
-    EBM,
-    GEN,
-    temp_schedule
-):
+
+def sample_posterior(key, x, EBM, GEN, temp_schedule):
     """
     Sample from the posterior distribution.
 
     Args:
     - key: PRNG key
     - x: batch of data samples
-    - EBM: energy-based model 
-    - GEN: generator 
+    - EBM: energy-based model
+    - GEN: generator
     - temp_schedule: temperature schedule
 
     Returns:

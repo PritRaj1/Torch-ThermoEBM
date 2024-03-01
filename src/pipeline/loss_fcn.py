@@ -6,7 +6,8 @@ from src.MCMC_Sampling.sample_distributions import sample_prior, sample_posterio
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
 
-pl_sig = float(parser['SIGMAS']['LKHOOD_SIGMA'])
+pl_sig = float(parser["SIGMAS"]["LKHOOD_SIGMA"])
+
 
 def ebm_loss(z_prior, z_posterior, EBM):
     """
@@ -20,7 +21,8 @@ def ebm_loss(z_prior, z_posterior, EBM):
     en_neg = EBM(z_prior.detach())
 
     # Return the difference in energies
-    return (en_pos - en_neg)
+    return en_pos - en_neg
+
 
 def gen_loss(x, z, GEN):
     """
@@ -29,16 +31,12 @@ def gen_loss(x, z, GEN):
 
     # Compute -log[ p_β(x | z) ]; max likelihood training
     x_pred = GEN(z) + (pl_sig * torch.randn_like(x))
-    log_lkhood = (torch.norm(x-x_pred, dim=-1)**2) / (2.0 * pl_sig**2)
+    log_lkhood = (torch.norm(x - x_pred, dim=-1) ** 2) / (2.0 * pl_sig**2)
 
     return log_lkhood
 
-def TI_EBM_loss_fcn(
-    x,
-    EBM,
-    GEN,
-    temp_schedule
-):
+
+def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
     """
     Function to compute the energy-based model loss using Thermodynamic Integration.
 
@@ -58,13 +56,13 @@ def TI_EBM_loss_fcn(
     total_loss = 0
 
     # Generate z_posterior for all temperatures
-    key, z_posterior = sample_posterior(x,EBM,GEN,temp_schedule)
+    key, z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
 
     # Prepend 0 to the temperature schedule, for unconditional ∇T calculation
     temp_schedule = torch.cat((torch.tensor([0]), temp_schedule))
 
     for i in range(1, len(temp_schedule)):
-        key, z_prior = sample_prior(EBM        )
+        key, z_prior = sample_prior(EBM)
 
         z_posterior_t = z_posterior[i - 1]
 
@@ -78,12 +76,8 @@ def TI_EBM_loss_fcn(
 
     return total_loss, key
 
-def TI_GEN_loss_fcn(
-    x,
-    EBM,
-    GEN,
-    temp_schedule
-):
+
+def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
     """
     Function to compute the generator loss using Thermodynamic Integration.
 
@@ -92,8 +86,8 @@ def TI_GEN_loss_fcn(
     - x: batch of x samples
     - EBM_params: energy-based model parameters
     - GEN_params: generator parameters
-    - EBM: energy-based model 
-    - GEN: generator 
+    - EBM: energy-based model
+    - GEN: generator
     - temp_schedule: temperature schedule
 
     Returns:
@@ -103,16 +97,10 @@ def TI_GEN_loss_fcn(
     total_loss = 0
 
     # Generate z_posterior for all temperatures
-    key, z_posterior = sample_posterior(
-        key,
-        x,
-        EBM,
-        GEN,
-        temp_schedule
-    )
+    key, z_posterior = sample_posterior(key, x, EBM, GEN, temp_schedule)
 
     # Prepend 0 to the temperature schedule, for unconditional ∇T calculation
-    temp_schedule =  torch.cat((torch.tensor([0]), temp_schedule))
+    temp_schedule = torch.cat((torch.tensor([0]), temp_schedule))
 
     for i in range(1, len(temp_schedule)):
 

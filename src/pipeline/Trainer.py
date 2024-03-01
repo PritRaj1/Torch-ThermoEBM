@@ -39,14 +39,6 @@ class Lit_LatentEBM_Model(L.LightningModule):
             self.temp_schedule = torch.tensor([1])
             print("Using no Thermodynamic Integration, defaulting to Vanilla Model")
 
-        self.fid = FrechetInceptionDistance(feature=64, normalize=True)  # FID metric
-        self.kid = KernelInceptionDistance(
-            feature=64, subset_size=batch_size, normalize=True
-        )  # KID metric
-        self.lpips = LearnedPerceptualImagePatchSimilarity(
-            net_type="alex", normalize=True
-        )  # LPIPS metric
-
     def configure_optimizers(self):
         # Optimisers
         EBM_optimiser = torch.optim.Adam(self.EBM.parameters(), lr=E_lr)
