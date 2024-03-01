@@ -37,8 +37,7 @@ def gen_loss(x, z, GEN):
 
     return log_lkhood.sum(axis=-1)
 
-
-def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
+def ThermodynamicIntegrationLoss(x, EBM, GEN, temp_schedule):
     """
     Function to compute the energy-based model loss using Thermodynamic Integration.
 
@@ -46,16 +45,17 @@ def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
     in https://doi.org/10.1016/j.csda.2009.07.025 for details.
 
     Args:
-    - x: sample of x
+    - x: batch of data
     - EBM: energy-based model forward
     - GEN: generator forward pass
     - temp_schedule: temperature schedule
 
     Returns:
-    - total_loss: the total loss for the entire thermodynamic integration loop, log(p_a(z))
+    - total_loss_ebm: the total loss for the entire thermodynamic integration loop, log(p_a(z))
+    - total_loss_gen: the total loss for the entire thermodynamic integration loop, log(p_β(x | z))
     """
-
-    total_loss = 0
+    total_loss_ebm = 0
+    total_loss_gen = 0
 
     # Generate z_posterior for all temperatures
     z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
@@ -68,52 +68,14 @@ def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
 
         z_posterior_t = z_posterior[i - 1]
 
-        loss_current = ebm_loss(z_prior, z_posterior_t, EBM)
+        loss_current_ebm = ebm_loss(z_prior, z_posterior_t, EBM)
+        loss_current_gen = gen_loss(x, z_posterior_t, GEN)
 
         # ∇T = t_i - t_{i-1}
         delta_T = temp_schedule[i] - temp_schedule[i - 1]
 
         # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
-        total_loss += 0.5 * (loss_current + total_loss) * delta_T
+        total_loss_ebm += 0.5 * (loss_current_ebm + total_loss_ebm) * delta_T
+        total_loss_gen += 0.5 * (loss_current_gen + total_loss_gen) * delta_T
 
-    return total_loss.mean()
-
-
-def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
-    """
-    Function to compute the generator loss using Thermodynamic Integration.
-
-    Args:
-    - x: batch of x samples
-    - EBM_params: energy-based model parameters
-    - GEN_params: generator parameters
-    - EBM: energy-based model
-    - GEN: generator
-    - temp_schedule: temperature schedule
-
-    Returns:
-    - total_loss: the total loss for the entire thermodynamic integration loop, log(p_β(x | z))
-    """
-
-    total_loss = 0
-
-    # Generate z_posterior for all temperatures
-    z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
-
-    # Prepend 0 to the temperature schedule, for unconditional ∇T calculation
-    temp_schedule = torch.cat((torch.tensor([0]), temp_schedule))
-
-    for i in range(1, len(temp_schedule)):
-
-        z_posterior_t = z_posterior[i - 1]
-
-        # MSE between g(z) and x, where z ~ p_θ(z|x, t)
-        loss_current = gen_loss(x, z_posterior_t, GEN)
-
-        # ∇T = t_i - t_{i-1}
-        delta_T = temp_schedule[i] - temp_schedule[i - 1]
-
-        # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
-        total_loss += 0.5 * (loss_current + total_loss) * delta_T
-
-    return total_loss.mean()
+    return total_loss_ebm.mean(), total_loss_gen.mean()

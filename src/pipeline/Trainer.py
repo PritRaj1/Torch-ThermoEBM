@@ -5,7 +5,7 @@ import configparser
 import numpy as np
 from torchvision.utils import make_grid
 
-from src.pipeline.loss_fcn import TI_EBM_loss_fcn, TI_GEN_loss_fcn
+from src.pipeline.loss_fcn import ThermodynamicIntegrationLoss
 from src.networks.PriorModel import EBM
 from src.networks.GeneratorModel import GEN
 from src.MCMC_Sampling.sample_distributions import sample_prior
@@ -63,16 +63,18 @@ class LatentEBM_Model(L.LightningModule):
         x, _ = batch
 
         # Get loss
-        loss_EBM, loss_GEN = self.get_loss(x)
+        loss_EBM, loss_GEN = ThermodynamicIntegrationLoss(
+            x, self.EBM, self.GEN, self.temp_schedule
+        )
 
         # Update params
         self.optimiser_step(loss_EBM, loss_GEN)
 
         #  Negative marginal log-likelihood
-        loss = loss_GEN.item() + loss_EBM.item()
+        loss = loss_GEN + loss_EBM
 
         self.log("train_loss", loss)
-        stores_grads(self)
+        #stores_grads(self)
 
         return loss
 
@@ -83,11 +85,13 @@ class LatentEBM_Model(L.LightningModule):
             x, _ = batch
 
             # Get loss
-            loss_EBM, loss_GEN = self.get_loss(x)
-            loss = loss_GEN.mean() + loss_EBM.mean()
+            loss_EBM, loss_GEN = ThermodynamicIntegrationLoss(
+                x, self.EBM, self.GEN, self.temp_schedule
+            )
+            loss = loss_GEN + loss_EBM
 
             self.log("val_loss", loss)
-            stores_grads(self)
+            #stores_grads(self)
 
             # Generate data
             generated_data = self.generate()
@@ -110,13 +114,6 @@ class LatentEBM_Model(L.LightningModule):
             tensorboard.add_image("Generated Images", grid, self.current_epoch)
 
         return loss
-
-    def get_loss(self, x):
-
-        ebm_loss = TI_EBM_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
-        gen_loss = TI_GEN_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
-
-        return ebm_loss, gen_loss
 
     def optimiser_step(self, lossE, lossG):
         """
