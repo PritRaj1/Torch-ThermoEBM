@@ -11,6 +11,8 @@ from src.networks.GeneratorModel import GEN
 from src.MCMC_Sampling.sample_distributions import sample_prior
 from src.pipeline.metrics import profile_image, stores_grads
 
+torch.autograd.set_detect_anomaly(True)
+
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
 
@@ -67,10 +69,10 @@ class LatentEBM_Model(L.LightningModule):
         self.optimiser_step(loss_EBM, loss_GEN)
 
         #  Negative marginal log-likelihood
-        loss = loss_GEN.mean() + loss_EBM.mean()
+        loss = loss_GEN.item() + loss_EBM.item()
 
         self.log("train_loss", loss)
-        stores_grads()
+        stores_grads(self)
 
         return loss
 
@@ -85,7 +87,7 @@ class LatentEBM_Model(L.LightningModule):
             loss = loss_GEN.mean() + loss_EBM.mean()
 
             self.log("val_loss", loss)
-            stores_grads()
+            stores_grads(self)
 
             # Generate data
             generated_data = self.generate()
@@ -111,16 +113,10 @@ class LatentEBM_Model(L.LightningModule):
 
     def get_loss(self, x):
 
-        ebm_loss = TI_EBM_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule).mean()
-        gen_loss = TI_GEN_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule).mean()
+        ebm_loss = TI_EBM_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
+        gen_loss = TI_GEN_loss_fcn(x, self.EBM, self.GEN, self.temp_schedule)
 
-        # Update params
-        self.optimiser_step(ebm_loss, gen_loss)
-
-        #  Negative marginal log-likelihood
-        loss = gen_loss.mean() + ebm_loss.mean()
-
-        return loss
+        return ebm_loss, gen_loss
 
     def optimiser_step(self, lossE, lossG):
         """

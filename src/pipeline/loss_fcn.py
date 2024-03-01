@@ -8,6 +8,8 @@ parser.read("hyperparams.ini")
 
 pl_sig = float(parser["SIGMAS"]["LKHOOD_SIGMA"])
 
+torch.autograd.set_detect_anomaly(True)
+
 
 def ebm_loss(z_prior, z_posterior, EBM):
     """
@@ -31,7 +33,7 @@ def gen_loss(x, z, GEN):
 
     # Compute -log[ p_β(x | z) ]; max likelihood training
     x_pred = GEN(z) + (pl_sig * torch.randn_like(x))
-    log_lkhood = (torch.norm(x - x_pred, dim=(2,3)) ** 2) / (2.0 * pl_sig**2)
+    log_lkhood = (torch.norm(x - x_pred, dim=-1) ** 2) / (2.0 * pl_sig**2)
 
     return log_lkhood.sum(axis=-1)
 
@@ -74,7 +76,7 @@ def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
         # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
         total_loss += 0.5 * (loss_current + total_loss) * delta_T
 
-    return total_loss
+    return total_loss.mean()
 
 
 def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
@@ -114,4 +116,4 @@ def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
         # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
         total_loss += 0.5 * (loss_current + total_loss) * delta_T
 
-    return total_loss
+    return total_loss.mean()

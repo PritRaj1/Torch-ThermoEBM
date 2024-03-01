@@ -75,10 +75,13 @@ def stores_grads(LitTrainer):
     Method to store the gradients of the EBM and GEN losses.
     """
 
+    all_grads = []
+
     for name, param in LitTrainer.EBM.named_parameters():
         if param.requires_grad:
             try:
                 EBM_grad = param.grad
+                all_grads.append(EBM_grad)
             except:
                 EBM_grad = None
 
@@ -86,9 +89,10 @@ def stores_grads(LitTrainer):
         if param.requires_grad:
             try:
                 GEN_grad = param.grad
+                all_grads.append(GEN_grad)
             except:
                 GEN_grad = None
 
     # Variance of all grads
-    all_grad = torch.cat([EBM_grad.flatten(), GEN_grad.flatten()])
+    all_grad = torch.cat([grad.flatten() for grad in all_grads])
     LitTrainer.log("grad_var", torch.var(all_grad))
