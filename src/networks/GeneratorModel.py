@@ -18,46 +18,28 @@ class GEN(nn.Module):
 
         # Top-down generator network
         self.layers = nn.Sequential(
-            nn.ConvTranspose2d(
-                input_dim, feature_dim * 16, kernel_size=4, stride=1, padding=0
-            ),
+            nn.ConvTranspose2d(input_dim, feature_dim * 16, kernel_size=4, stride=1, padding=0),
             nn.BatchNorm2d(feature_dim * 16),
             f,
-            nn.ConvTranspose2d(
-                feature_dim * 16, feature_dim * 8, kernel_size=4, stride=2, padding=1
-            ),
+            nn.ConvTranspose2d(feature_dim * 16, feature_dim * 8, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(feature_dim * 8),
             f,
-            nn.ConvTranspose2d(
-                feature_dim * 8, feature_dim * 4, kernel_size=4, stride=2, padding=1
-            ),
+            nn.ConvTranspose2d(feature_dim * 8, feature_dim * 4, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(feature_dim * 4),
             f,
         )
 
-        if image_dim == 64:  # 64 x 64 images
-            self.layers.add_module(
-                "layer_4",
-                nn.ConvTranspose2d(
-                    feature_dim * 4, feature_dim * 2, kernel_size=4, stride=2, padding=1
-                ),
-            )
-            self.layers.add_module("layer_5", f)
-            self.layers.add_module(
-                "layer_6",
-                nn.ConvTranspose2d(
-                    feature_dim * 2, output_dim, kernel_size=4, stride=2, padding=1
-                ),
-            )
-            self.layers.add_module("layer_7", nn.Tanh())
-        else:  # 32 x 32 images
-            self.layers.add_module(
-                "layer_4",
-                nn.ConvTranspose2d(
-                    feature_dim * 4, output_dim, kernel_size=4, stride=1, padding=1
-                ),
-            )
-            self.layers.add_module("layer_5", nn.Tanh())
+        if image_dim == 64: # 64 x 64 images
+            self.layers.add_module('layer_4', nn.ConvTranspose2d(feature_dim * 4, feature_dim * 2, kernel_size=4, stride=2, padding=1))
+            self.layers.add_module('layer_5', f)
+            self.layers.add_module('layer_6', nn.ConvTranspose2d(feature_dim * 2, output_dim, kernel_size=4, stride=2, padding=1))
+            self.layers.add_module('layer_7', nn.Tanh())
+        else: # 32 x 32 images
+            self.layers.add_module('layer_4', nn.ConvTranspose2d(feature_dim * 4, output_dim, kernel_size=4, stride=2, padding=1))
+            self.layers.add_module('layer_5', nn.Tanh())
+    
 
     def forward(self, z):
-        return self.layers(z)
+        for layer in self.layers:
+            z = layer(z)
+        return z

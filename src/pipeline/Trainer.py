@@ -27,6 +27,9 @@ num_temps = int(parser["TEMP"]["NUM_TEMPS"])
 class LatentEBM_Model(L.LightningModule):
     def __init__(self, image_dim):
         super().__init__()
+
+        self.automatic_optimization = False
+
         self.EBM = EBM()
         self.GEN = GEN(image_dim)
 

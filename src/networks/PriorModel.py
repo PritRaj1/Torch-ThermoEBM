@@ -25,4 +25,4 @@ class EBM(nn.Module):
         )
 
     def forward(self, z):
-        return self.layers(z.squeeze()).view(-1, self.output_dim, 1, 1).requires_grad_()
+        return self.layers(z.squeeze()).view(-1, output_dim, 1, 1).requires_grad_()

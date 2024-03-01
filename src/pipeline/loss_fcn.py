@@ -56,13 +56,13 @@ def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
     total_loss = 0
 
     # Generate z_posterior for all temperatures
-    key, z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
+    z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
 
     # Prepend 0 to the temperature schedule, for unconditional ∇T calculation
     temp_schedule = torch.cat((torch.tensor([0]), temp_schedule))
 
     for i in range(1, len(temp_schedule)):
-        key, z_prior = sample_prior(EBM)
+        z_prior = sample_prior(EBM)
 
         z_posterior_t = z_posterior[i - 1]
 
@@ -74,7 +74,7 @@ def TI_EBM_loss_fcn(x, EBM, GEN, temp_schedule):
         # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
         total_loss += 0.5 * (loss_current + total_loss) * delta_T
 
-    return total_loss, key
+    return total_loss
 
 
 def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
@@ -82,7 +82,6 @@ def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
     Function to compute the generator loss using Thermodynamic Integration.
 
     Args:
-    - key: PRNG key
     - x: batch of x samples
     - EBM_params: energy-based model parameters
     - GEN_params: generator parameters
@@ -97,7 +96,7 @@ def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
     total_loss = 0
 
     # Generate z_posterior for all temperatures
-    key, z_posterior = sample_posterior(key, x, EBM, GEN, temp_schedule)
+    z_posterior = sample_posterior(x, EBM, GEN, temp_schedule)
 
     # Prepend 0 to the temperature schedule, for unconditional ∇T calculation
     temp_schedule = torch.cat((torch.tensor([0]), temp_schedule))
@@ -107,7 +106,7 @@ def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
         z_posterior_t = z_posterior[i - 1]
 
         # MSE between g(z) and x, where z ~ p_θ(z|x, t)
-        key, loss_current = gen_loss(x, z_posterior_t, GEN)
+        loss_current = gen_loss(x, z_posterior_t, GEN)
 
         # ∇T = t_i - t_{i-1}
         delta_T = temp_schedule[i] - temp_schedule[i - 1]
@@ -115,4 +114,4 @@ def TI_GEN_loss_fcn(x, EBM, GEN, temp_schedule):
         # # 1/2 * (f(x_i) + f(x_{i-1})) * ∇T
         total_loss += 0.5 * (loss_current + total_loss) * delta_T
 
-    return total_loss, key
+    return total_loss

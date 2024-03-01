@@ -40,7 +40,7 @@ class PerformanceCallback(Callback):
 
         loss_FLOPS(pl_module, x)
 
-NUM_EXPERIMENTS = configparser["PIPELINE"]["NUM_EXPERIMENTS"]
+NUM_EXPERIMENTS = int(parser["PIPELINE"]["NUM_EXPERIMENTS"])
 for idx in range(0, NUM_EXPERIMENTS):
     model = LatentEBM_Model(IMAGE_DIM)
 
@@ -61,7 +61,7 @@ for idx in range(0, NUM_EXPERIMENTS):
         profiler='simple',
         logger=[tb_logger, csv_logger],
         callbacks=[PerformanceCallback()],
-        enable_progress_bar=False        
+        enable_progress_bar=True        
         )
     
     # Train the model
