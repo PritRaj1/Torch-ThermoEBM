@@ -1,0 +1,7 @@
+torch
+torchvision
+matplotlib
+seaborn
+lightning
+tqdm
+torchmetrics[image]
