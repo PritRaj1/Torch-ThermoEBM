@@ -4,12 +4,13 @@ import configparser
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
 
+input_dim = int(parser['EBM']['Z_CHANNELS'])
 hidden_units = int(parser['EBM']['EBM_FEATURE_DIM'])
 output_dim = int(parser['EBM']['Z_CHANNELS'])
 leak_coef = float(parser['EBM']['EBM_LEAK'])
 
 class EBM(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self):
         super().__init__()  
 
         f = nn.LeakyReLU(leak_coef)

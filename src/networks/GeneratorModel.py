@@ -4,12 +4,13 @@ import torch.nn as nn
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
 
+input_dim = int(parser['EBM']['Z_CHANNELS'])
 feature_dim = int(parser['GEN']['GEN_FEATURE_DIM'])
 output_dim = int(parser['GEN']['CHANNELS'])
 leak_coef = float(parser['GEN']['GEN_LEAK'])
 
 class GEN(nn.Module):
-    def __init__(self, input_dim, image_dim):
+    def __init__(self, image_dim):
         super().__init__()
 
 
