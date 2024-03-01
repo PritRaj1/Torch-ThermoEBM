@@ -20,11 +20,11 @@ E_gamma = float(parser["OPTIMIZER"]["E_GAMMA"])
 G_gamma = float(parser["OPTIMIZER"]["G_GAMMA"])
 E_opt_steps = int(parser["OPTIMIZER"]["E_STEPS"])
 G_opt_steps = int(parser["OPTIMIZER"]["G_STEPS"])
-temp_power = float(parser["TEMP"]["TEMP_POWER"])
+temp_power = int(parser["TEMP"]["TEMP_POWER"])
 num_temps = int(parser["TEMP"]["NUM_TEMPS"])
 
 
-class Lit_LatentEBM_Model(L.LightningModule):
+class LatentEBM_Model(L.LightningModule):
     def __init__(self, image_dim):
         super().__init__()
         self.EBM = EBM()
