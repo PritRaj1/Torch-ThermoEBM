@@ -1,5 +1,6 @@
 import torch
 import configparser
+from torch.nn.functional import mse_loss
 
 parser = configparser.ConfigParser()
 parser.read("hyperparams.ini")
@@ -43,7 +44,7 @@ def posterior_grad_log(z, x, t, EBM, GEN):
     """
 
     g_z = GEN(z.view(z.size(0), -1, 1, 1))
-    log_llhood = -t * (torch.norm(x - g_z, dim=(2,3)) ** 2) / (2.0 * pl_sig**2)
+    log_llhood = -t * mse_loss(g_z, x) / (2.0 * pl_sig**2)
     grad_log_llhood = torch.autograd.grad(log_llhood.sum(), z, create_graph=True)[0]
 
     grad_prior = prior_grad_log(z, EBM)

@@ -5,7 +5,7 @@ import configparser
 import numpy as np
 from torchvision.utils import make_grid
 
-from src.pipeline.loss_fcn import ThermodynamicIntegrationLoss
+from src.pipeline.loss_fcn import ThermodynamicIntegrationLoss, VanillaLoss
 from src.networks.PriorModel import EBM
 from src.networks.GeneratorModel import GEN
 from src.MCMC_Sampling.sample_distributions import sample_prior
@@ -18,10 +18,6 @@ parser.read("hyperparams.ini")
 
 E_lr = float(parser["OPTIMIZER"]["E_LR"])
 G_lr = float(parser["OPTIMIZER"]["G_LR"])
-E_gamma = float(parser["OPTIMIZER"]["E_GAMMA"])
-G_gamma = float(parser["OPTIMIZER"]["G_GAMMA"])
-E_opt_steps = int(parser["OPTIMIZER"]["E_STEPS"])
-G_opt_steps = int(parser["OPTIMIZER"]["G_STEPS"])
 temp_power = int(parser["TEMP"]["TEMP_POWER"])
 num_temps = int(parser["TEMP"]["NUM_TEMPS"])
 
@@ -35,36 +31,24 @@ class LatentEBM_Model(L.LightningModule):
         self.EBM = EBM()
         self.GEN = GEN(image_dim)
 
-        if temp_power >= 1:
-            self.temp_schedule = torch.tensor(
-                np.linspace(0, 1, num_temps) ** temp_power
-            )
-            print("Using Temperature Schedule: {}".format(self.temp_schedule))
+        if temp_power == 0:
+            self.loss_fcn = VanillaLoss
         else:
-            self.temp_schedule = torch.tensor([1])
-            print("Using no Thermodynamic Integration, defaulting to Vanilla Model")
+            self.loss_fcn = ThermodynamicIntegrationLoss
 
     def configure_optimizers(self):
         # Optimisers
         EBM_optimiser = torch.optim.Adam(self.EBM.parameters(), lr=E_lr)
         GEN_optimiser = torch.optim.Adam(self.GEN.parameters(), lr=G_lr)
 
-        # Learning rate schedulers
-        EBM_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            EBM_optimiser, gamma=E_gamma
-        )
-        GEN_scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            GEN_optimiser, gamma=G_gamma
-        )
-
-        return [EBM_optimiser, GEN_optimiser], [EBM_scheduler, GEN_scheduler]
+        return [EBM_optimiser, GEN_optimiser]
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
 
         # Get loss
-        loss_EBM, loss_GEN = ThermodynamicIntegrationLoss(
-            x, self.EBM, self.GEN, self.temp_schedule
+        loss_EBM, loss_GEN = self.loss_fcn(
+            x, self.EBM, self.GEN
         )
 
         # Update params
@@ -85,8 +69,8 @@ class LatentEBM_Model(L.LightningModule):
             x, _ = batch
 
             # Get loss
-            loss_EBM, loss_GEN = ThermodynamicIntegrationLoss(
-                x, self.EBM, self.GEN, self.temp_schedule
+            loss_EBM, loss_GEN = self.loss_fcn(
+                x, self.EBM, self.generate
             )
             loss = loss_GEN + loss_EBM
 

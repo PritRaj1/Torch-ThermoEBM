@@ -21,7 +21,7 @@ posterior_s = torch.tensor(float(parser["MCMC"]["G_STEP_SIZE"]), device=device)
 
 def update_step(x, grad_f, s):
     """Update the current state of the sampler."""
-    return  x + (s * s * grad_f) + torch.sqrt(torch.tensor(2)) * s * torch.randn_like(x)
+    return  x - (s * s * grad_f) + torch.sqrt(torch.tensor(2)) * s * torch.randn_like(x)
 
 
 def sample_p0():
@@ -47,10 +47,10 @@ def sample_prior(EBM):
         grad_f = prior_grad_log(z, EBM)
         z = update_step(z, grad_f, prior_s)
 
-    return z
+    return z.detach()
 
 
-def sample_posterior(x, EBM, GEN, temp_schedule):
+def sample_posterior(x, t, EBM, GEN):
     """
     Sample from the posterior distribution.
 
@@ -64,15 +64,11 @@ def sample_posterior(x, EBM, GEN, temp_schedule):
     - z_samples: samples from the posterior distribution indexed by temperature
     """
 
-    z_samples = torch.empty(len(temp_schedule), batch_size, z_channels, 1, 1, device=device)
 
-    for idx, t in enumerate(temp_schedule):
-        z = sample_p0()
+    z = sample_p0()
 
-        for k in range(posterior_steps):
-            grad_f = posterior_grad_log(z, x, t, EBM, GEN)
-            z = update_step(z, grad_f, posterior_s)
+    for k in range(posterior_steps):
+        grad_f = posterior_grad_log(z, x, t, EBM, GEN)
+        z = update_step(z, grad_f, posterior_s)
 
-        z_samples[idx] = z
-
-    return z_samples
+    return z.detach()

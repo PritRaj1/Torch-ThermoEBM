@@ -60,8 +60,8 @@ def loss_FLOPS(LitTrainer, x):
 
     flops_profiler.start_profile()
 
-    loss_EBM, loss_GEN = ThermodynamicIntegrationLoss(
-        x, LitTrainer.EBM, LitTrainer.GEN, LitTrainer.temp_schedule
+    loss_EBM, loss_GEN = LitTrainer.loss_fcn(
+        x, LitTrainer.EBM, LitTrainer.GEN
     )
 
     flops = flops_profiler.get_total_flops()
